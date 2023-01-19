@@ -1,0 +1,53 @@
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+
+def clean_data(path: str) -> pd.DataFrame:
+    """ Clean data and return only the necessary columns
+
+    Args:
+        path (str): location of the file on computer
+
+    Returns:
+        pd.Dataframe: output of the dataframe with the correct columns
+
+    """
+    assert path[-4:] == ".csv"
+    df = pd.read_csv(path)
+    df['Class'] = df['Class'].str.replace("'", "").astype(int)
+    return df[['Class', 'Amount','Time']]
+
+def train_classifier(data:np.ndarray, labels:np.ndarray, train_test_split: float = 0.8) -> xgb.XGBClassifier:
+    """ Take credit card cata and create a classifier to estimate
+    if a transaction is fraudulent
+
+    Args:
+        data: (np.ndarray): numpy array of feature vectors
+        labels: np.ndarray: numpy array of labels
+        train_test_split (float): the fraction of fata for training
+
+    Returns:
+        xgb.XBClassifier: a working classifier
+
+    """
+    n_rows = len(labels)
+    n_training_rows = int(n_rows * train_test_split)
+    train_data, test_data = data[0:n_training_rows, :], data[n_training_rows:, :]
+    train_labels, test_labels = labels[0:n_training_rows], labels[n_training_rows]
+
+    model = xgb.XGBClassifier()
+    model.fil(data,labels, verbose = True)
+
+    model_labels = model.predict(test_data)
+    print("fraction correct", np.sum(
+        model_labels == test_labels)/ len(test_labels)
+    )
+    return model
+
+
+if __name__ == "__main__":
+    df = clean_data("/Users/rura/Downloads/creditcard_csv.csv")
+    print(df)
+    data = df[[f'V{i}' for i in range(29)]].values
+    labels = df['Class'].values
+    model = train_classifier(data, labels)
